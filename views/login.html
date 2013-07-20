@@ -1,0 +1,29 @@
+<% include header.html %>
+
+
+
+<% if (message) {%>
+    <p><%= message %></p>
+<% } %>
+
+<form action="/login" method="post">
+    <label>Username:</label>
+    <input type="text" name="username">
+    <br>
+    <label>Password:</label>
+    <input type="password" name="password">
+    <br>
+    <input type="submit" value="submit">
+</form>
+<!--block content
+    if message
+        p= message
+    form(action="/login", method="POST")
+        label Username:
+        input(type="text", name="username")
+        br
+        label Password:
+        input(type="password", name="password")
+        br
+        input(type="submit", value="Submit")-->
+<% include footer.html %>
