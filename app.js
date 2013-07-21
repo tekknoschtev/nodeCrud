@@ -18,11 +18,24 @@ var users = [
   { id: 3, username: 'jane', email: 'jane@learnboost.com', password: '345' }
 ];
 
+Schema = mongoose.Schema;
+mongoose.connect('mongodb://localhost/nodeCrud');
+
+var UserSchema = new Schema({
+    user_id: String,
+    email: String,
+    password: String
+});
+
+mongoose.model('User', UserSchema);
+var User = mongoose.model('User');
+var user = new User;
+
+
+
 // all environments
 app.configure(function() {
     app.set('port', process.env.PORT || 3000);
-//    app.set('views', __dirname + '/views');
-//    app.set('view engine', 'ejs');
     app.engine('.html', require('ejs').__express);
     app.set('views', __dirname + '/views');
     app.set('view engine', 'html');
@@ -47,24 +60,18 @@ if ('development' == app.get('env')) {
 
 require('./routes/index')(app);
 
-
-app.get('/api', api.hello);
-
-app.get('/users', user.list);
 app.get('/users/:name', function(req,res) {
     res.send(req.params.name);
-})
-app.get('/ejs', function(req,res) {
-    res.render('users', {
-        users: users,
-        title: "EJS example",
-        header: "Some users"
-    });
 });
 
 app.get('/login', function(req,res) {
     res.render('login', {user: req.user, message: req.flash('error'), title: "EJS example", header: "Some users"});
 });
+
+app.get('/logout', function(req, res){
+    req.logout();
+    res.redirect('/');
+}); 
 
 app.get('/account', ensureAuthenticated, function(req,res) {
     res.render('account', {user: req.user});
@@ -77,9 +84,8 @@ app.post('/login',
     }
 );
 
-app.get('/logout', function(req, res){
-    req.logout();
-    res.redirect('/');
+app.post('/api/users', function(req,res) {
+    res.send(req.params.email);
 });
 
 http.createServer(app).listen(app.get('port'), function(){
