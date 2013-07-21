@@ -1,9 +1,8 @@
-<html>
-    <head>
-        <link rel="stylesheet" type="text/css" href="../public/stylesheets/style.css">
-    </head>
+<% include header.html %>
+    
+    <p>This is a test</p>
+    <% if(user) { %>
+    <h2>Welcome <%= user.username %></h2>
+    <% } %>
 
-    <body>
-        <p>This is a test</p>
-    </body>
-</html>
+<% include footer.html %>
