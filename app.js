@@ -1,7 +1,6 @@
 var express = require('express');
 var routes = require('./routes');
 var user = require('./routes/user');
-var api = require('./controllers/controller.js');
 var http = require('http');
 var path = require('path');
 var mongoose = require('mongoose');
@@ -11,27 +10,31 @@ var flash = require('connect-flash');
 
 var app = express();
 
-// Dummy users
-var users = [
-  { id: 1, username: 'tobi', email: 'tobi@learnboost.com', password: '123' },
-  { id: 2, username: 'loki', email: 'loki@learnboost.com', password: '234' },
-  { id: 3, username: 'jane', email: 'jane@learnboost.com', password: '345' }
-];
+// development only
+if ('development' == app.get('env')) {
+  app.use(express.errorHandler());
+}
 
 Schema = mongoose.Schema;
 mongoose.connect('mongodb://localhost/nodeCrud');
 
 var UserSchema = new Schema({
-    user_id: String,
+    name: String,
     email: String,
     password: String
 });
 
+UserSchema.methods.validPassword = function(password) {
+    if (password === this.password) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 mongoose.model('User', UserSchema);
-var User = mongoose.model('User');
-var user = new User;
-
-
+var UserModel = mongoose.model('User', UserSchema);
 
 // all environments
 app.configure(function() {
@@ -52,13 +55,62 @@ app.configure(function() {
     app.use('/public', express.static(__dirname + '/public'));
 });   
 
+app.get('/', function(req,res) {
+    console.log("Test " + req.user);
+    res.render('index', { title: 'Express', user: req.user });
+});
 
-// development only
-if ('development' == app.get('env')) {
-  app.use(express.errorHandler());
-}
+app.get('/api/users', function(req,res) {
+    return UserModel.find(function(err, users) {
+        if(!err) {
+            res.render('users', {user: users, title: 'Userlist'});
+        }
+        else {
+            console.log(err);
+        }
+    });
+});
 
-require('./routes/index')(app);
+app.get('/api/users/:id', function(req,res) {
+    return UserModel.findById(req.params.id, function(err, user_data) {
+        if(!err){
+            res.send({
+                name:user_data.name,
+                email:user_data.email
+            });
+        }
+    });
+});
+
+app.post('/api/users', function(req,res) {
+    console.log(req.body);
+    
+    user = new UserModel({
+        name: req.body.name
+    });
+    
+    user.save(function(err){
+        if(!err) {
+            console.log("created")
+        }
+        else {
+            return console.log(err)
+        }
+    });
+});
+
+app.delete('/api/users/delete/:id', function(req,res) {
+    return UserModel.findById(req.params.id, function(err, user) {
+        if(!err) {
+            user.remove(function(err) {
+                if(!err) {
+                    console.log("Deleted user: " + req.params.id);
+                    return res.send();
+                }
+            })
+        }
+    })
+})
 
 app.get('/users/:name', function(req,res) {
     res.send(req.params.name);
@@ -84,8 +136,26 @@ app.post('/login',
     }
 );
 
-app.post('/api/users', function(req,res) {
-    res.send(req.params.email);
+app.get('/register', function(req,res) {
+    res.render('register', {title: "Register for an Account", user: '', message: ''});
+});
+
+app.post('/register', function(req,res){
+    console.log(req.body);
+    user = new UserModel({
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password
+    });
+    user.save(function(err){
+        if(!err) {
+            console.log("created")
+            res.redirect('/');
+        }
+        else {
+            return console.log(err)
+        }
+    });
 });
 
 http.createServer(app).listen(app.get('port'), function(){
@@ -93,7 +163,7 @@ http.createServer(app).listen(app.get('port'), function(){
 });
 
 function findById(id, fn) {
-    var idx = id -1;
+//    var idx = id -1;
     if(users[idx]) {
         fn(null, users[idx]);
     }
@@ -122,7 +192,7 @@ passport.serializeUser(function(user, done) {
 });
 
 passport.deserializeUser(function(id, done) {
-  findById(id, function (err, user) {
+  UserModel.findById(id, function (err, user) {
     done(err, user);
   });
 });
@@ -132,24 +202,39 @@ passport.deserializeUser(function(id, done) {
 //   credentials (in this case, a username and password), and invoke a callback
 //   with a user object.  In the real world, this would query a database;
 //   however, in this example we are using a baked-in set of users.
-passport.use(new LocalStrategy(
-  function(username, password, done) {
-    // asynchronous verification, for effect...
-    process.nextTick(function () {
-      
-      // Find the user by username.  If there is no user with the given
-      // username, or the password is not correct, set the user to `false` to
-      // indicate failure and set a flash message.  Otherwise, return the
-      // authenticated `user`.
-      findByUsername(username, function(err, user) {
-        if (err) { return done(err); }
-        if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
-        if (user.password != password) { return done(null, false, { message: 'Invalid password' }); }
+//passport.use(new LocalStrategy(
+//  function(username, password, done) {
+//    // asynchronous verification, for effect...
+//    process.nextTick(function () {
+//      
+//      // Find the user by username.  If there is no user with the given
+//      // username, or the password is not correct, set the user to `false` to
+//      // indicate failure and set a flash message.  Otherwise, return the
+//      // authenticated `user`.
+//      findByUsername(username, function(err, user) {
+//        if (err) { return done(err); }
+//        if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
+//        if (user.password != password) { return done(null, false, { message: 'Invalid password' }); }
+//        return done(null, user);
+//      })
+//    });
+//  }
+//));
+
+passport.use(new LocalStrategy(function(name, password, done) {
+    UserModel.findOne({name: name}, function(err, user){
+        if(err) {
+            return done(err);
+        }
+        if(!user) {
+            return done(null, false, {message: 'Incorrect username.'});
+        }
+        if(!user.validPassword(password)) {
+            return done(null, false, {message: 'Incorrect password.'});
+        }
         return done(null, user);
-      })
     });
-  }
-));
+}));
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) { return next(); }
