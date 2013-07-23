@@ -110,7 +110,24 @@ app.delete('/api/users/delete/:id', function(req,res) {
             })
         }
     })
-})
+});
+
+app.put('/api/users/update/:id', function(req,res) {
+    return UserModel.findById(req.params.id, function(err, user) {
+        if(!err) {
+            user.update({
+                email: req.body.email,
+                name: req.body.name,
+                password: req.body.password
+            }, function(err) {
+                if(!err) {
+                    console.log("Updated user: " + req.params.id);
+                    return res.send();
+                }
+            })
+        }
+    })
+});
 
 app.get('/users/:name', function(req,res) {
     res.send(req.params.name);
@@ -126,7 +143,8 @@ app.get('/logout', function(req, res){
 }); 
 
 app.get('/account', ensureAuthenticated, function(req,res) {
-    res.render('account', {user: req.user});
+    console.log(req.body);
+    res.render('account', {title: "Maintain Account", user: req.user});
 });
 
 app.post('/login', 
@@ -163,7 +181,6 @@ http.createServer(app).listen(app.get('port'), function(){
 });
 
 function findById(id, fn) {
-//    var idx = id -1;
     if(users[idx]) {
         fn(null, users[idx]);
     }
@@ -183,10 +200,6 @@ function findByUsername(username, fn) {
 }
 
 // Passport session setup.
-//   To support persistent login sessions, Passport needs to be able to
-//   serialize users into and deserialize users out of the session.  Typically,
-//   this will be as simple as storing the user ID when serializing, and finding
-//   the user by ID when deserializing.
 passport.serializeUser(function(user, done) {
   done(null, user.id);
 });
@@ -196,30 +209,6 @@ passport.deserializeUser(function(id, done) {
     done(err, user);
   });
 });
-
-// Use the LocalStrategy within Passport.
-//   Strategies in passport require a `verify` function, which accept
-//   credentials (in this case, a username and password), and invoke a callback
-//   with a user object.  In the real world, this would query a database;
-//   however, in this example we are using a baked-in set of users.
-//passport.use(new LocalStrategy(
-//  function(username, password, done) {
-//    // asynchronous verification, for effect...
-//    process.nextTick(function () {
-//      
-//      // Find the user by username.  If there is no user with the given
-//      // username, or the password is not correct, set the user to `false` to
-//      // indicate failure and set a flash message.  Otherwise, return the
-//      // authenticated `user`.
-//      findByUsername(username, function(err, user) {
-//        if (err) { return done(err); }
-//        if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
-//        if (user.password != password) { return done(null, false, { message: 'Invalid password' }); }
-//        return done(null, user);
-//      })
-//    });
-//  }
-//));
 
 passport.use(new LocalStrategy(function(name, password, done) {
     UserModel.findOne({name: name}, function(err, user){

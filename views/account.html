@@ -1,2 +1,27 @@
-<p>Username: <%= user.username %></p>
-<p>Email: <%= user.email %></p>
+<% include header.html %>
+
+<form action="/api/user" id="updateUser">
+    <input type="hidden" name="id" value="<%= user._id %>">
+    <label>Name:</label>
+    <input type="text" name="name" value="<%= user.name%>">
+    <label>Email:</label>
+    <input type="text" name="email" value="<%= user.email %>">
+    <label>New Password:</label>
+    <input type="password" name="password"> 
+    <br>
+    <button id="update">Update</button>
+</form>
+
+<script>
+    $(document).ready(function () {
+        $('#update').click(function() {
+            $.ajax({
+                url: '/api/users/update/<%= user._id %>',
+                type: 'PUT',
+                data: $('#updateUser').serialize()
+            });
+            return false;
+        });
+    });
+</script>
+<% include footer.html %>
